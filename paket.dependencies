@@ -2,5 +2,8 @@ source https://api.nuget.org/v3/index.json
 
 storage: none
 framework: netcoreapp3.1, netstandard2.0, netstandard2.1
-nuget FSharp.Core
+nuget Expecto >= 9.0
+nuget FSharp.Core >= 4.0
+nuget Microsoft.NET.Test.Sdk >= 16.0
 nuget MySqlConnector
+nuget YoloDev.Expecto.TestSdk
