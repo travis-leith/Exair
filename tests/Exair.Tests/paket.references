@@ -3,3 +3,4 @@ YoloDev.Expecto.TestSdk
 Microsoft.NET.Test.Sdk
 FSharp.Core
 MySqlConnector
+Expecto.VisualStudio.TestAdapter

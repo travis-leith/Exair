@@ -22,4 +22,4 @@ let main argv =
     // cmd.ExecuteNonQuery() |> ignore
 
     // printfn "sql: %s" sql
-    Tests.runTestsInAssembly defaultConfig argv
+    Tests.runTestsInAssemblyWithCLIArgs [] argv
