@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Key.fs" />
+    <Compile Include="Collection.fs" />
     <Compile Include="API.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

@@ -1,7 +1,7 @@
-﻿module Exair.Tests
+module Exair.Tests
 open Expecto
-open API
 open MySqlConnector
+open CollectionTests
 
 // type User = {
 //     UserName:string
