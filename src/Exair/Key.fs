@@ -5,65 +5,54 @@ open System
 
 module private KeyHelpers =
     let jsonPath userExpr = 
-        let rec innerLoop expr state =
+        let rec innerLoop expr (lastName, acc) =
             match expr with
             |Patterns.Lambda(_, body) ->
-                innerLoop body state
+                innerLoop body (lastName, acc)
             |Patterns.PropertyGet(Some parent, propInfo, []) ->
                 let newState = 
                     match propInfo.PropertyType.GetInterface(nameof Collections.IEnumerable) with
-                    |_ when propInfo.PropertyType = typeof<string> -> sprintf ".%s%s" propInfo.Name state
-                    |null -> sprintf ".%s%s" propInfo.Name state
-                    |_ -> sprintf ".%s[*]%s" propInfo.Name state
+                    |_ when propInfo.PropertyType = typeof<string> -> propInfo.Name, sprintf ".%s%s" propInfo.Name acc
+                    |null -> propInfo.Name, sprintf ".%s%s" propInfo.Name acc
+                    |_ -> propInfo.Name, sprintf ".%s[*]%s" propInfo.Name acc
                 newState |> innerLoop parent
             |Patterns.Call (None, _, expr1::[Patterns.Let (v, expr2, _)]) when v.Name = "mapping"->
-                let parentPath = innerLoop expr1 ""
-                let childPath = innerLoop expr2 ""
-                parentPath + childPath
+                let _, parentPath = innerLoop expr1 ("","")
+                let lastName, childPath = innerLoop expr2 ("","")
+                lastName, parentPath + childPath
             |ExprShape.ShapeVar _ ->
-                state
+                (lastName, acc)
             |_ -> 
                 failwithf "Unsupported expression: %A" expr
-        innerLoop userExpr "" |> sprintf "$%s"
+        let lastName, path = innerLoop userExpr ("","")
+        lastName, path|> sprintf "$%s"
 
 type KeyCardinality =
     | SingleValue
     | MultiValue
 
-module KeyConstraint =
-    type KeyConstraintValue =
-        private 
-        | UniqueKeyPrivate
-        | ForeignKeyPrivate of string
-
-    let CreateUnique = UniqueKeyPrivate
-    let CreateForeign<'a> = typeof<'a>.Name |> ForeignKeyPrivate
-
-    let (|UniqueKey|ForeignKey|) = function
-        | UniqueKeyPrivate -> UniqueKey
-        | ForeignKeyPrivate s -> ForeignKey s
-
 type Key = 
     {
         Path:String
+        Name:string
         KeyCardinality:KeyCardinality
-        KeyConstraint:KeyConstraint.KeyConstraintValue option
+        KeyType:string
     }
 
-    static member private CreateHelper (userExpr:Expr<('a -> 'b)>) keyCardinality  =
+    static member private CreateHelper (userExpr:Expr<('a -> 'b)>) keyCardinality keyType =
         match userExpr with
         |Patterns.WithValue(f, _, expr) ->
-            let path = KeyHelpers.jsonPath expr
+            let lastName, path = KeyHelpers.jsonPath expr
             {
                 Path = path
+                Name = lastName
                 KeyCardinality = keyCardinality
-                KeyConstraint = None
+                KeyType = keyType
             }
         | _ -> failwithf "Unsupported expression: %A" userExpr
 
-    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> string)>) = Key.CreateHelper userExpr SingleValue
-    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> int)>) = Key.CreateHelper userExpr SingleValue
-    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> DateTime)>) = Key.CreateHelper userExpr SingleValue
-    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> string list)>) = Key.CreateHelper userExpr MultiValue
-    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> int list)>) = Key.CreateHelper userExpr MultiValue
-    member this.WithConstraint keyConstraint = {this with KeyConstraint = Some keyConstraint}
+    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> string)>) = Key.CreateHelper userExpr SingleValue "varchar(50)"
+    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> int)>) = Key.CreateHelper userExpr SingleValue "int"
+    //static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> DateTime)>) = Key.CreateHelper userExpr SingleValue
+    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> string list)>) = Key.CreateHelper userExpr MultiValue "varchar(50)"
+    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> int list)>) = Key.CreateHelper userExpr MultiValue "int"

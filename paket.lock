@@ -6,7 +6,7 @@ NUGET
       FSharp.Core (>= 4.6)
       Mono.Cecil (>= 0.11.2)
     Expecto.VisualStudio.TestAdapter (10.0.2)
-    FSharp.Core (4.7.2)
+    FSharp.Core (5.0)
     Microsoft.CodeCoverage (16.7.1) - restriction: || (== netcoreapp3.1) (&& (== netstandard2.0) (>= net45)) (&& (== netstandard2.0) (>= netcoreapp2.1)) (&& (== netstandard2.1) (>= net45)) (&& (== netstandard2.1) (>= netcoreapp2.1))
     Microsoft.NET.Test.Sdk (16.7.1)
       Microsoft.CodeCoverage (>= 16.7.1) - restriction: || (== netcoreapp3.1) (&& (== netstandard2.0) (>= net45)) (&& (== netstandard2.0) (>= netcoreapp2.1)) (&& (== netstandard2.1) (>= net45)) (&& (== netstandard2.1) (>= netcoreapp2.1))

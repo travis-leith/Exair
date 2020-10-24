@@ -4,33 +4,53 @@ open Expecto
 open Expecto.Flip
 open Exair
 
-type Student = {
+type private Student = {
     Name:string
     StudentId:int
+    ShoolHouse:string
+}
+
+type private SchoolHouse = {
+    HouseName:string
+    FlagColor: uint8 * uint8 * uint8
+    Motto:string
 }
 
 [<Tests>]
 let definitionTests =
     testList "Collections" [
         testList "Definition Tests" [
-            testCase "Single Key Collection" (fun _ ->
+            testCase "Search Key Exists" (fun _ ->
                 let collection =
                     Collection.OfType<Student>
-                    |> Collection.WithKey (Key.Create (fun s -> s.StudentId))
+                    |> Collection.WithSearchKey (Key.Create (fun s -> s.StudentId))
 
-                collection.Keys.Length |> Expect.equal "Should be 1" 1
+                collection.SearchKeys.Length |> Expect.equal "Should be 1" 1
             )
 
-            testCase "Multiple Key Collection" (fun _ ->
+            testCase "Unique Key Exists" (fun _ ->
                 let collection =
                     Collection.OfType<Student>
-                    |> Collection.WithKey (Key.Create (fun s -> s.StudentId))
-                    |> Collection.WithKey (Key.Create (fun s -> s.Name))
+                    |> Collection.WithUniqueKey (Key.Create (fun s -> s.StudentId))
 
-                collection.Keys.Length |> Expect.equal "Should be 2" 2
+                collection.UniqueKeys.Length |> Expect.equal "Should be 1" 1
             )
-        ]
-        testList "Integration Tests" [
+
+            testCase "Foreign Key Exists" (fun _ ->
+                let collection =
+                    Collection.OfType<Student>
+                    |> Collection.WithForeignKey<SchoolHouse> (Key.Create (fun s -> s.HouseName))
+
+                collection.ForeignKeys.Length |> Expect.equal "Should be 1" 1
+            )
+
+            testCase "Foreign Key Type Name" (fun _ ->
+                let collection =
+                    Collection.OfType<Student>
+                    |> Collection.WithForeignKey<SchoolHouse> (Key.Create (fun s -> s.HouseName))
+
+                collection.ForeignKeys.Head |> snd |> Expect.equal "Should be named correctly" typeof<SchoolHouse>.Name
+            )
         ]
     ]
     
