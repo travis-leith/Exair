@@ -3,6 +3,7 @@ module KeyTests
 open Expecto
 open Expecto.Flip
 open Exair
+open Exair.Types
 
 type A = {
     AInt:int

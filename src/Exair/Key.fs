@@ -1,4 +1,4 @@
-namespace Exair
+namespace Exair.Types
 
 open Microsoft.FSharp.Quotations
 open System
@@ -11,7 +11,7 @@ module private KeyHelpers =
                 innerLoop body (lastName, acc)
             |Patterns.PropertyGet(Some parent, propInfo, []) ->
                 let newState = 
-                    match propInfo.PropertyType.GetInterface(nameof Collections.IEnumerable) with
+                    match propInfo.PropertyType.GetInterface("System.Collections.IEnumerable") with
                     |_ when propInfo.PropertyType = typeof<string> -> propInfo.Name, sprintf ".%s%s" propInfo.Name acc
                     |null -> propInfo.Name, sprintf ".%s%s" propInfo.Name acc
                     |_ -> propInfo.Name, sprintf ".%s[*]%s" propInfo.Name acc
@@ -33,10 +33,12 @@ type KeyCardinality =
 
 type Key = 
     {
-        Path:String
+        Path:string
         Name:string
         KeyCardinality:KeyCardinality
-        KeyType:string
+        KeyDbType:string
+        CollectionType:Type
+        KeyType:Type
     }
 
     static member private CreateHelper (userExpr:Expr<('a -> 'b)>) keyCardinality keyType =
@@ -47,7 +49,9 @@ type Key =
                 Path = path
                 Name = lastName
                 KeyCardinality = keyCardinality
-                KeyType = keyType
+                KeyDbType = keyType
+                CollectionType = typeof<'a>
+                KeyType = typeof<'b>
             }
         | _ -> failwithf "Unsupported expression: %A" userExpr
 

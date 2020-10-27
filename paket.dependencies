@@ -7,4 +7,5 @@ nuget Expecto.VisualStudio.TestAdapter
 nuget FSharp.Core >= 4.0
 nuget Microsoft.NET.Test.Sdk >= 16.0
 nuget MySqlConnector
+nuget Thoth.Json.Net
 nuget YoloDev.Expecto.TestSdk
