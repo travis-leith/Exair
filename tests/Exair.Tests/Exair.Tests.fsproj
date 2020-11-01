@@ -10,8 +10,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="KeyTests.fs" />
-    <Compile Include="CollectionTests.fs" />
     <Compile Include="IntegrationTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>

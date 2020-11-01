@@ -17,19 +17,25 @@ module private Database =
 [<RequireQualifiedAccess>]
 module private Collection =
     let createOrReplaceSql collection =
-        let keySql isUnique key =
-            let uniqueNess = if isUnique then "unique " else ""
+        let simpleKey isUnique key =
+            let uniqueSql = if isUnique then "unique " else ""
             [
                 sprintf "%s %s as (json_value(json_info, '%s')) stored" key.Name key.KeyDbType key.JsonPath.AsString // does not work for multi valued keys
                 sprintf "check (%s is not null)" key.Name
-                sprintf "%skey (%s)" uniqueNess key.Name
+                sprintf "%skey (%s)" uniqueSql key.Name
             ]
 
-        let keysSql =
-            [
-                yield! collection.SearchKeys |> List.collect (keySql false)
-                yield! collection.UniqueKeys |> List.collect (keySql true)
-            ]
+        let keySql = function
+            |Search key -> simpleKey false key
+            |Unique key -> simpleKey true key
+            |Foreign _ -> raise (System.NotImplementedException())
+            
+
+        let keysSql = collection.Keys |> Map.toList |> List.collect (snd >> keySql)
+            //[
+            //    yield! collection.SearchKeys |> List.collect (keySql false)
+            //    yield! collection.UniqueKeys |> List.collect (keySql true)
+            //]
 
         let createClauses =
             [
@@ -66,11 +72,8 @@ module private EntityInsert =
             |> List.map (fun x -> Encode.Auto.toString(2, x) |> sprintf "('%s')")
             |> String.concat ","
 
-        let query =
-                sprintf "insert into %s.%s(json_info) values %s;select last_insert_id();"
-                    q.Collection.Database.AsString q.Collection.TableName valuesSql
-
-        query
+        sprintf "insert into %s.%s(json_info) values %s;select last_insert_id();"
+            q.Collection.CollectionData.Database.AsString q.Collection.CollectionData.TableName valuesSql
 
 [<RequireQualifiedAccess>]
 module private EntitySelect =
@@ -122,7 +125,6 @@ module private EntitySelect =
             match evalWhere w paramIdSeed with
             | "", _, _ -> "", [], paramIdSeed
             | sql, parList, newSeed -> sprintf "NOT (%s)" sql, parList, newSeed
-                
             
     let selectSql (q:SelectQuery<'a>) =
         //let aggregates = q.Aggregates |> evalAggregates
@@ -154,7 +156,7 @@ module private EntitySelect =
         let whereSql, parList, _ = evalWhere q.Where 0
         let sql =
             [
-                sprintf "select %s from %s.%s" selectFields q.Collection.Database.AsString q.Collection.TableName
+                sprintf "select %s from %s.%s" selectFields q.Collection.CollectionData.Database.AsString q.Collection.CollectionData.TableName
                 sprintf "where %s" whereSql
             ] |> String.concat " "
         sql, parList
@@ -181,7 +183,7 @@ module private EntityGet =
             |[x] -> sprintf "= %i" x.AsInt
             |xs -> xs |> List.map (fun x -> sprintf "%i" x.AsInt) |> String.concat "," |> sprintf "in (%s)"
         [
-            sprintf "select %s from %s.%s" selectFields q.Collection.Database.AsString q.Collection.TableName
+            sprintf "select %s from %s.%s" selectFields q.Collection.CollectionData.Database.AsString q.Collection.CollectionData.TableName
             sprintf "where entity_id %s" whereDetail
         ] |> String.concat " "
 
@@ -192,7 +194,7 @@ type MySqlConnection with
         cmd.ExecuteNonQuery() |> ignore
 
     member conn.CreateOrReplaceCollection (collection, ?tran:MySqlTransaction) =
-        let sql = Collection.createOrReplaceSql collection
+        let sql = Collection.createOrReplaceSql collection.CollectionData
         use cmd = new MySqlCommand(sql, conn, tran |> Option.toObj)
         cmd.ExecuteNonQuery() |> ignore
 

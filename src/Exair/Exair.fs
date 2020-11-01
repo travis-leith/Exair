@@ -2,7 +2,6 @@ namespace Exair
 open System
 open Microsoft.FSharp.Quotations
 
-
 type Database = Database of string with member this.AsString = let (Database x) = this in x
 
 type EntityId<'a> = EntityId of uint64 with member this.AsInt = let (EntityId x) = this in x
@@ -80,28 +79,53 @@ type Key =
     //static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> string list)>) = Key.CreateHelper userExpr MultiValue "varchar(50)"
     //static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> int list)>) = Key.CreateHelper userExpr MultiValue "int"
 
+type CollectionData =
+    internal {
+        Database: Database
+        TableName: string
+        Keys:Map<JsonPath, CollectionKey>
+    }
+    
+and CollectionKey =
+    |Search of KeyData // fsharplint:disable-line UnionDefinitionIndentation
+    |Unique of KeyData
+    |Foreign of KeyData * CollectionData * KeyData
+
 type Collection<'a> = internal {
-    Database: Database
-    TableName: string
-    SearchKeys: KeyData list
-    UniqueKeys: KeyData list
-    //ForeignKeys: (Key * string) list
+    CollectionData: CollectionData
 }
 
+
 module Collection =
-    let OfType<'a> database : Collection<'a> = {
-        Database = database
-        TableName = sprintf "Main_%s" typeof<'a>.Name
-        SearchKeys = []
-        UniqueKeys = []
-        //ForeignKeys = []
-    }
+    //let inline private _Key (f:(JsonPath * CollectionKey) -> 'a) (keys:Map<JsonPath, CollectionKey>) :Map<JsonPath, CollectionKey> =
+    //    f 
+
+    //let inline private _Keys f col =
+    //    f col.Keys <&> fun x -> {col with Keys = col.Keys.Add x}
+
+    //let inline private _CollectionData f col =
+    //    f col.CollectionData <&> fun x -> {col with CollectionData = x}
+
+    //let inline private _CollectionDataKey f = _CollectionData << _Keys <| f
+
+    let OfType<'a> database : Collection<'a> =
+        let collectionData = {
+            Database = database
+            TableName = sprintf "Main_%s" typeof<'a>.Name
+            Keys = Map.empty
+        }
+
+        {CollectionData = collectionData}
 
     let WithSearchKey (key:Key<'a,'b>) (collection:Collection<'a>) =
-        {collection with SearchKeys = key.KeyData::collection.SearchKeys}
+        let keys = collection.CollectionData.Keys |> Map.add key.KeyData.JsonPath (Search key.KeyData)
+        let collectionData = {collection.CollectionData with Keys = keys}
+        {collection with CollectionData = collectionData}
 
     let WithUniqueKey (key:Key<'a,'b>) (collection:Collection<'a>) =
-        {collection with UniqueKeys = key.KeyData::collection.UniqueKeys}
+        let keys = collection.CollectionData.Keys |> Map.add key.KeyData.JsonPath (Unique key.KeyData)
+        let collectionData = {collection.CollectionData with Keys = keys}
+        {collection with CollectionData = collectionData}
 
     //let WithForeignKey<'a> key def =
     //    let typeName = typeof<'a>.Name

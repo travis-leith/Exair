@@ -6,13 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Types.fs" />
-    <Compile Include="Entity.fs" />
-    <Compile Include="Key.fs" />
-    <Compile Include="Database.fs" />
-    <Compile Include="Collection.fs" />
     <Compile Include="Exair.fs" />
     <Compile Include="Builders.fs" />
-    <Compile Include="API.fs" />
     <Compile Include="WhereAnalyzer.fs" />
     <Compile Include="MariaDb.fs" />
   </ItemGroup>

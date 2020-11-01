@@ -5,6 +5,7 @@ framework: netcoreapp3.1, netstandard2.0, netstandard2.1
 nuget Expecto >= 9.0
 nuget Expecto.VisualStudio.TestAdapter
 nuget FSharp.Core >= 4.0
+nuget FSharpPlus
 nuget Microsoft.NET.Test.Sdk >= 16.0
 nuget MySqlConnector
 nuget Thoth.Json.Net
