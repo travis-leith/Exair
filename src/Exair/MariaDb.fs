@@ -4,8 +4,6 @@ open Thoth.Json.Net
 open System
 
 let private selectFields = "entity_id, unix_timestamp(last_update) last_update, version_number, json_info"
-//type DbInt = DbInt of int with member this.DbVal() = let (DbInt x) = this in sprintf "%i" x
-//type DbString = DbString of string with member this.DbVal() = let (DbString x) = this in sprintf "'%s'" x
 
 [<RequireQualifiedAccess>]
 module private Database =
@@ -22,7 +20,7 @@ module private Collection =
         let keySql isUnique key =
             let uniqueNess = if isUnique then "unique " else ""
             [
-                sprintf "%s %s as (json_value(json_info, '%s')) stored" key.Name key.KeyDbType key.Path // does not work for multi valued keys
+                sprintf "%s %s as (json_value(json_info, '%s')) stored" key.Name key.KeyDbType key.JsonPath.AsString // does not work for multi valued keys
                 sprintf "check (%s is not null)" key.Name
                 sprintf "%skey (%s)" uniqueNess key.Name
             ]

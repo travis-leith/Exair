@@ -24,14 +24,14 @@ type C = {
 let tests =
     testList "Keys" [
         testList "Path Tests" [
-            testCase "level 1 single int" (fun _ ->
-                    let x = Key.Create(fun (a:A) -> a.AInt)
-                    x.Path |> Expect.equal "should be correct path" "$.AInt"
-                )
-            testCase "level 1 single string" (fun _ ->
-                    let x = Key.Create(fun (a:A) -> a.AString)
-                    x.Path |> Expect.equal "should be correct path" "$.AString"
-                )
+            //testCase "level 1 single int" (fun _ ->
+            //        let x = Key.Create(fun (a:A) -> a.AInt)
+            //        x.Path |> Expect.equal "should be correct path" "$.AInt"
+            //    )
+            //testCase "level 1 single string" (fun _ ->
+            //        let x = Key.Create(fun (a:A) -> a.AString)
+            //        x.Path |> Expect.equal "should be correct path" "$.AString"
+            //    )
             //testCase "level 1 multiple int" (fun _ ->
             //        let x = Key.Create(fun (a:A) -> a.AInts)
             //        x.Path |> Expect.equal "should be correct path" "$.AInts[*]"

@@ -158,25 +158,29 @@ let selectFrom<'a> collection = SelectBuilder<'a>(collection)
 let getFrom<'a> collection = GetBuilder<'a>(collection)
 
 /// Creates WHERE condition for column
-let column key whereComp = Where.Key(key, whereComp)
+let column key whereComp = Where.Key(key.KeyData, whereComp)
 /// WHERE column value equals to
-let eq key (o:obj) = column key (Eq o)
+let eq (key:Key<'a,'b>) (o:'b) = column key (Eq o)
 /// WHERE column value not equals to
-let ne key (o:obj) = column key (Ne o)
+let ne (key:Key<'a,'b>) (o:'b) = column key (Ne o)
 /// WHERE column value greater than
-let gt key (o:obj) = column key (Gt o)
+let gt (key:Key<'a,'b>) (o:'b) = column key (Gt o)
 /// WHERE column value lower than
-let lt key (o:obj) = column key (Lt o)
+let lt (key:Key<'a,'b>) (o:'b) = column key (Lt o)
 /// WHERE column value greater/equals than
-let ge key (o:obj) = column key (Ge o)
+let ge (key:Key<'a,'b>) (o:'b) = column key (Ge o)
 /// WHERE column value lower/equals than
-let le key (o:obj) = column key (Le o)
+let le (key:Key<'a,'b>) (o:'b) = column key (Le o)
 ///// WHERE column like value
 //let like name (str:string) = column name (Like str)
 /// WHERE column is IN values
-let isIn key (os:obj list) = column key (In os)
+let isIn (key:Key<'a,'b>) (os:'b list) =
+    let objList = os |> List.map (fun x -> x :> obj)
+    column key (In objList)
 /// WHERE column is NOT IN values
-let isNotIn key (os:obj list) = column key (NotIn os)
+let isNotIn (key:Key<'a,'b>) (os:'b list) =
+    let objList = os |> List.map (fun x -> x :> obj)
+    column key (NotIn objList)
 ///// WHERE column IS NULL
 //let isNullValue name = column name IsNull
 ///// WHERE column IS NOT NULL

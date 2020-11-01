@@ -3,9 +3,9 @@ open System
 open Microsoft.FSharp.Quotations
 
 
-type Database = Database of string with member this.AsString = match this with Database s -> s
+type Database = Database of string with member this.AsString = let (Database x) = this in x
 
-type EntityId<'a> = EntityId of uint64 with member this.AsInt = match this with EntityId i -> i
+type EntityId<'a> = EntityId of uint64 with member this.AsInt = let (EntityId x) = this in x
 
 type Entity<'a> = {
     EntityId:EntityId<'a>
@@ -42,48 +42,54 @@ type KeyCardinality =
     | SingleValue
     | MultiValue
 
-type Key = 
-    {
-        Path:string
+type JsonPath = JsonPath of string with member this.AsString = let (JsonPath s) = this in s
+
+type KeyData =
+    internal {
+        JsonPath:JsonPath
         Name:string
         KeyCardinality:KeyCardinality
         KeyDbType:string
-        CollectionType:Type
-        KeyType:Type
     }
 
-    static member private CreateHelper (userExpr:Expr<('a -> 'b)>) keyCardinality keyType =
+type Key<'collection, 'a> =
+    internal {
+        Get:'collection -> 'a
+        KeyData:KeyData
+    }
+    
+type Key =
+    static member private CreateHelper (userExpr:Expr<('collection -> 'a)>) keyCardinality keyType =
         match userExpr with
         |Patterns.WithValue(f, _, expr) ->
             let lastName, path = KeyHelpers.jsonPath expr
-            {
-                Path = path
+            let keyData = {
                 Name = lastName
+                JsonPath = JsonPath path
                 KeyCardinality = keyCardinality
                 KeyDbType = keyType
-                CollectionType = typeof<'a>
-                KeyType = typeof<'b>
+            }
+            {
+                Get = f :?> 'collection -> 'a
+                KeyData = keyData
             }
         | _ -> failwithf "Unsupported expression: %A" userExpr
-
-    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> string)>) = Key.CreateHelper userExpr SingleValue "varchar(200)"
-    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> int)>) = Key.CreateHelper userExpr SingleValue "int"
+    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('collection -> string)>) = Key.CreateHelper userExpr SingleValue "varchar(200)"
+    static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('collection -> int)>) = Key.CreateHelper userExpr SingleValue "int"
     //static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> DateTime)>) = Key.CreateHelper userExpr SingleValue
     //static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> string list)>) = Key.CreateHelper userExpr MultiValue "varchar(50)"
     //static member Create ([<ReflectedDefinition(true)>] userExpr:Expr<('a -> int list)>) = Key.CreateHelper userExpr MultiValue "int"
 
 type Collection<'a> = internal {
     Database: Database
-    CollectionType: Type
     TableName: string
-    SearchKeys: Key list
-    UniqueKeys: Key list
+    SearchKeys: KeyData list
+    UniqueKeys: KeyData list
     //ForeignKeys: (Key * string) list
 }
 
 module Collection =
     let OfType<'a> database : Collection<'a> = {
-        CollectionType = typeof<'a>
         Database = database
         TableName = sprintf "Main_%s" typeof<'a>.Name
         SearchKeys = []
@@ -91,11 +97,11 @@ module Collection =
         //ForeignKeys = []
     }
 
-    let WithSearchKey key def =
-        {def with SearchKeys = key::def.SearchKeys}
+    let WithSearchKey (key:Key<'a,'b>) (collection:Collection<'a>) =
+        {collection with SearchKeys = key.KeyData::collection.SearchKeys}
 
-    let WithUniqueKey key def =
-        {def with UniqueKeys = key::def.UniqueKeys}
+    let WithUniqueKey (key:Key<'a,'b>) (collection:Collection<'a>) =
+        {collection with UniqueKeys = key.KeyData::collection.UniqueKeys}
 
     //let WithForeignKey<'a> key def =
     //    let typeName = typeof<'a>.Name
@@ -129,7 +135,7 @@ type UnaryOperation =
 
 type Where =
     | Empty
-    | Key of Key * ColumnComparison
+    | Key of KeyData * ColumnComparison
     | Binary of Where * BinaryOperation * Where
     | Unary of UnaryOperation * Where
     static member (|||) (a, b) = Binary(a, Or, b)
@@ -157,7 +163,7 @@ type Pagination = {
 //    | Min of columnName:string * alias:string
 //    | Max of columnName:string * alias:string
 
-type SelectQuery<'a> = {
+type SelectQuery<'a> = internal {
     Collection : Collection<'a>
     Where : Where
     //OrderBy : OrderBy list
@@ -168,23 +174,23 @@ type SelectQuery<'a> = {
     //Distinct : bool
 }
 
-type InsertQuery<'a> = {
+type InsertQuery<'a> = internal {
     Collection : Collection<'a>
     Values : 'a list
 }
 
-type GetQuery<'a> = {
+type GetQuery<'a> = internal {
     Collection : Collection<'a>
     EntityIds : EntityId<'a> list
 }
 
-type UpdateQuery<'a> = {
+type UpdateQuery<'a> = internal {
     Collection : Collection<'a>
     Value : 'a
     Where : Where
 }
 
-type DeleteQuery<'a> = {
+type DeleteQuery<'a> = internal {
     Collection : Collection<'a>
     Where : Where
 }

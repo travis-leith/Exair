@@ -21,7 +21,7 @@ type SchoolHouse = {
 [<RequireQualifiedAccess>]
 module SchoolHouseKeys =
     let houseName = Key.Create (fun s -> s.HouseName)
-    let trophyCount = Key.Create (fun s -> s.TrophyCount)
+    //let trophyCount = Key.Create (fun s -> s.TrophyCount)
 
 let databaseUsageTests() =
     try
@@ -115,13 +115,3 @@ let integrationTests =
     testList "IntegrationTests" [
         databaseUsageTests()
     ]
-
-//let inline GetBodyAsync x = (^a: (member GetBodyAsync: unit -> ^b) x)
-//open System.Threading.Tasks
-//type A() =
-//    member this.GetBodyAsync() = Task.FromResult 1
-//type B() =
-//    member this.GetBodyAsync() = async { return 2 }
-
-//A() |> GetBodyAsync |> fun x -> x.Result // 1
-//B() |> GetBodyAsync |> Async.RunSynchronously // 2
