@@ -32,35 +32,35 @@ let tests =
                     let x = Key.Create(fun (a:A) -> a.AString)
                     x.Path |> Expect.equal "should be correct path" "$.AString"
                 )
-            testCase "level 1 multiple int" (fun _ ->
-                    let x = Key.Create(fun (a:A) -> a.AInts)
-                    x.Path |> Expect.equal "should be correct path" "$.AInts[*]"
-                )
-            testCase "level 1 multiple string" (fun _ ->
-                    let x = Key.Create(fun (a:A) -> a.AStrings)
-                    x.Path |> Expect.equal "should be correct path" "$.AStrings[*]"
-                )
+            //testCase "level 1 multiple int" (fun _ ->
+            //        let x = Key.Create(fun (a:A) -> a.AInts)
+            //        x.Path |> Expect.equal "should be correct path" "$.AInts[*]"
+            //    )
+            //testCase "level 1 multiple string" (fun _ ->
+            //        let x = Key.Create(fun (a:A) -> a.AStrings)
+            //        x.Path |> Expect.equal "should be correct path" "$.AStrings[*]"
+            //    )
         
-            testCase "level 2 single int" (fun _ ->
-                    let x = Key.Create(fun (b:B) -> b.BAs |> List.map (fun a -> a.AInt))
-                    x.Path |> Expect.equal "should be correct path" "$.BAs[*].AInt"
-                )
-            testCase "level 2 single string" (fun _ ->
-                    let x = Key.Create(fun (b:B) -> b.BAs |> List.map (fun a -> a.AString))
-                    x.Path |> Expect.equal "should be correct path" "$.BAs[*].AString"
-                )
-            testCase "level 2 multiple int" (fun _ ->
-                    let x = Key.Create(fun (b:B) -> b.BAs |> List.collect (fun a -> a.AInts))
-                    x.Path |> Expect.equal "should be correct path" "$.BAs[*].AInts[*]"
-                )
-            testCase "level 2 multiple string" (fun _ ->
-                    let x = Key.Create(fun (b:B) -> b.BAs |> List.collect (fun a -> a.AStrings))
-                    x.Path |> Expect.equal "should be correct path" "$.BAs[*].AStrings[*]"
-                )
+            //testCase "level 2 single int" (fun _ ->
+            //        let x = Key.Create(fun (b:B) -> b.BAs |> List.map (fun a -> a.AInt))
+            //        x.Path |> Expect.equal "should be correct path" "$.BAs[*].AInt"
+            //    )
+            //testCase "level 2 single string" (fun _ ->
+            //        let x = Key.Create(fun (b:B) -> b.BAs |> List.map (fun a -> a.AString))
+            //        x.Path |> Expect.equal "should be correct path" "$.BAs[*].AString"
+            //    )
+            //testCase "level 2 multiple int" (fun _ ->
+            //        let x = Key.Create(fun (b:B) -> b.BAs |> List.collect (fun a -> a.AInts))
+            //        x.Path |> Expect.equal "should be correct path" "$.BAs[*].AInts[*]"
+            //    )
+            //testCase "level 2 multiple string" (fun _ ->
+            //        let x = Key.Create(fun (b:B) -> b.BAs |> List.collect (fun a -> a.AStrings))
+            //        x.Path |> Expect.equal "should be correct path" "$.BAs[*].AStrings[*]"
+            //    )
 
-            testCase "level 3 multiple string" (fun _ ->
-                    let x = Key.Create(fun (c:C) -> c.CBs |> List.collect(fun b -> b.BAs |> List.collect (fun a -> a.AStrings))) 
-                    x.Path |> Expect.equal "should be correct path" "$.CBs[*].BAs[*].AStrings[*]"
-                )
+            //testCase "level 3 multiple string" (fun _ ->
+            //        let x = Key.Create(fun (c:C) -> c.CBs |> List.collect(fun b -> b.BAs |> List.collect (fun a -> a.AStrings))) 
+            //        x.Path |> Expect.equal "should be correct path" "$.CBs[*].BAs[*].AStrings[*]"
+            //    )
         ]
     ]

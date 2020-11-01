@@ -2,20 +2,26 @@ module IntegrationTests
 open Expecto
 open Expecto.Flip
 open Exair
-open Exair.Types
+open Exair.MariaDb
 open MySqlConnector
 
-type private Student = {
+type Student = {
     Name:string
     StudentId:int
     ShoolHouse:string
 }
 
-type private SchoolHouse = {
+type SchoolHouse = {
     HouseName:string
     FlagColor: string
     UnbiasedDescription:string
+    TrophyCount:System.Int32
 }
+
+[<RequireQualifiedAccess>]
+module SchoolHouseKeys =
+    let houseName = Key.Create (fun s -> s.HouseName)
+    let trophyCount = Key.Create (fun s -> s.TrophyCount)
 
 let databaseUsageTests() =
     try
@@ -23,47 +29,80 @@ let databaseUsageTests() =
         use conn = new MySqlConnection(connString)
         conn.Open()
 
-        let dbName = "school"
-        let schoolDb = Database.Create conn dbName
+        let schoolDb = "school" |> Database
+        schoolDb |> conn.CreateOrReplaceDatabase
 
+        
         let schoolHouseCollection =
             Collection.OfType<SchoolHouse> schoolDb
-            |> Collection.WithUniqueKey (Key.Create (fun s -> s.HouseName))
-            |> Collection.Create conn
+            |> Collection.WithUniqueKey SchoolHouseKeys.houseName
 
-        let stubbsHouse = { HouseName = "Stubbs"; FlagColor = "Yellow(more like Gold!)"; UnbiasedDescription = "Most awesome" }
+        schoolHouseCollection |> conn.CreateOrReplaceCollection
+
+        let stubbsHouse = { HouseName = "Stubbs"; FlagColor = "Yellow (more like Gold!)"; UnbiasedDescription = "Most awesome"; TrophyCount = 100}
         let stubbsId =
-            stubbsHouse
-            |> Entity.Insert schoolHouseCollection
+            insertInto schoolHouseCollection {
+                value stubbsHouse
+            } |> conn.Insert |> List.exactlyOne
+            
 
         let otherHouses = [
-            { HouseName = "Bullimore"; FlagColor = "Blue"; UnbiasedDescription = "Jerks" }
-            { HouseName = "Haysom"; FlagColor = "Red"; UnbiasedDescription = "Losers" }
-            { HouseName = "Evans"; FlagColor = "Green"; UnbiasedDescription = "Weirdos" }
+            { HouseName = "Bullimore"; FlagColor = "Blue"; UnbiasedDescription = "Jerks"; TrophyCount = 95}
+            { HouseName = "Haysom"; FlagColor = "Red"; UnbiasedDescription = "Losers"; TrophyCount = 3}
+            { HouseName = "Evans"; FlagColor = "Green"; UnbiasedDescription = "Weirdos"; TrophyCount = 32}
         ]
             
-        let otherIds = otherHouses |> Entity.InsertList schoolHouseCollection
+        let otherIds =
+            insertInto schoolHouseCollection {
+                values otherHouses
+            } |> conn.Insert
 
-        let selectedStubbs = Entity.Get schoolHouseCollection stubbsId
-        let selectedOthers = Entity.GetList schoolHouseCollection otherIds
+        let fetchedStubbs =
+            getFrom schoolHouseCollection {
+                entityId stubbsId
+            } |> conn.Get |> List.exactlyOne
+
+        let fetchedOthers =
+            getFrom schoolHouseCollection {
+                entityIds otherIds
+            } |> conn.Get
+
+        let selectedBullimore =
+            selectFrom schoolHouseCollection {
+                where (eq SchoolHouseKeys.houseName "Bullimore")
+            } |> conn.Select |> List.exactlyOne
+
+        let selectedOthers =
+            selectFrom schoolHouseCollection {
+                where (isIn SchoolHouseKeys.houseName ["Evans"; "Haysom"])
+            } |> conn.Select
 
         testList "Basic CRUD" [
             test "Insert single value" {
-                stubbsId.AsInt |> Expect.equal "First Id is 1" 1UL
+                stubbsId.AsInt |> Expect.equal "" 1UL
             }
 
             test "Insert multiple values" {
-                otherIds |> List.map (fun x -> x.AsInt) |> Expect.equal "Ids are sequenced" [2UL; 3UL; 4UL]
+                otherIds |> List.map (fun x -> x.AsInt) |> Expect.equal "" [2UL; 3UL; 4UL]
             }
 
-            test "Select a single value" {
-                selectedStubbs.Item |> Expect.equal "Should be same as insertred" stubbsHouse
+            test "Get a single value" {
+                fetchedStubbs.Item |> Expect.equal "" stubbsHouse
             }
 
-            test "Select multiple values" {
-                selectedOthers |> List.sortBy (fun e -> e.EntityId) |> List.map (fun e -> e.Item)
+            test "Get multiple values" {
+                fetchedOthers |> List.sortBy (fun e -> e.EntityId) |> List.map (fun e -> e.Item)
                 |> Expect.equal "Should be same as inserted" otherHouses
             }
+
+            test "Select with equality" {
+                selectedBullimore.Item.UnbiasedDescription |> Expect.equal "" "Jerks"
+            }
+
+            test "Select in list" {
+                selectedOthers |> List.sumBy (fun x -> x.EntityId.AsInt) |> Expect.equal "" 7UL
+            }
+
         ]
     with
     |ex ->
@@ -76,3 +115,13 @@ let integrationTests =
     testList "IntegrationTests" [
         databaseUsageTests()
     ]
+
+//let inline GetBodyAsync x = (^a: (member GetBodyAsync: unit -> ^b) x)
+//open System.Threading.Tasks
+//type A() =
+//    member this.GetBodyAsync() = Task.FromResult 1
+//type B() =
+//    member this.GetBodyAsync() = async { return 2 }
+
+//A() |> GetBodyAsync |> fun x -> x.Result // 1
+//B() |> GetBodyAsync |> Async.RunSynchronously // 2

@@ -1,4 +1,4 @@
-namespace Exair.Types
+namespace Exair
 open Thoth.Json.Net
 open System
 
